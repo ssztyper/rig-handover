@@ -1,0 +1,64 @@
+# Preview for review (ADR 0003): run rig, save one page as one HTML file, publish it on GitHub Pages.
+# The HTML is built here and never committed. Run again with an empty marker to take the marker off
+# the same link.
+name: preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      night:
+        description: Night to preview (YYYY-MM-DD)
+        default: '2026-10-28'
+        required: true
+      marker:
+        description: LANE_MARKER for the banner (leave empty for "no marker set")
+        default: ''
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --no-frozen-lockfile
+      - name: Save the page
+        env:
+          NIGHT: ${{ inputs.night }}
+          LANE_MARKER: ${{ inputs.marker }}
+          PORT: '8787'
+        run: |
+          [[ "$NIGHT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad night: $NIGHT"; exit 1; }
+          pnpm start & pid=$!
+          for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/health" >/dev/null && break; sleep 1; done
+          mkdir -p site
+          curl -sf "http://localhost:$PORT/digest/$NIGHT" -o site/index.html
+          kill $pid
+          grep -q '<table' site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
