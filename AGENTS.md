@@ -28,7 +28,34 @@ Read first: `docs/vision.md`, `docs/styleguide.md`. Decisions: `docs/adr/`.
    ```
 
 5. An issue is closed only when its "Done when" holds. If it can't hold yet, leave it open and
-   say what it waits on.
+   say what it waits on. An issue that waits on someone else (a review, a reply) stays open until
+   they have acted: "sent" is not "reviewed".
+
+## Issue shape
+
+Every issue split from a plan carries this, in this order (approved by the lane's human, 2026-10-29):
+
+- Title: what the unit of work delivers, in a few words.
+- Label: `plan:<plan name>` (for example `plan:morning-digest`).
+- Body:
+
+  ```
+  Source: plan.md § <n>
+
+  ## Scope
+
+  <what to build, from the plan's section, with the ADR or styleguide rules it touches>
+
+  ## Done when
+
+  <the plan's "Done when", word for word>
+
+  ## Blocked by
+
+  <#n, #m or —>
+  ```
+
+The first line is always `Source: plan.md § <n>`: that is how the reviewer sorts issues.
 
 ## Skills
 
